@@ -1,0 +1,186 @@
+//Miranda Harris
+//mirjharr
+
+
+SUBI SP, SP, #16
+STUR X19, [SP, #0]
+STUR X20, [SP, #8]
+ADD X19, XZR, XZR //X19 = base address a - saved
+ADDI X20, XZR, #10 //X20 = n - saved
+SUBI SP, SP, #8
+STUR LR, [SP, #0]
+ADD X1, X19, XZR //X1 = a
+ADD X2, X20, XZR //X2 = n
+BL fill
+LDUR LR, [SP, #0]
+ADDI SP, SP, #8
+
+SUBI SP, SP, #8
+STUR LR, [SP, #0]
+ADD X1, X19, XZR
+ADD X2, X20, XZR
+BL insertion_sort
+LDUR LR, [SP, #0]
+ADDI SP, SP, #8
+
+SUBI SP, SP, #8
+STUR LR, [SP, #0]
+ADD X1, X19, XZR //a
+ADD X2, XZR, XZR //start
+SUBI X3, X20, #1 //end
+ADD X4, XZR, XZR //value (0)
+BL binary_search
+PRNT X0
+LDUR LR, [SP, #0]
+ADDI SP, SP, #8
+
+SUBI SP, SP, #8
+STUR LR, [SP, #0]
+ADD X1, X19, XZR //a
+ADD X2, XZR, XZR //start
+SUBI X3, X20, #1 //end
+SUBI X4, X20, #1 //value (n-1)
+BL binary_search
+PRNT X0
+LDUR LR, [SP, #0]
+ADDI SP, SP, #8
+
+SUBI SP, SP, #8
+STUR LR, [SP, #0]
+ADD X1, X19, XZR
+ADD X2, XZR, XZR
+SUBI X3, X20, #1
+LSR X4, X20, #1 //(n/2)
+BL binary_search 
+PRNT X0
+LDUR LR, [SP, #0]
+ADDI SP, SP, #8
+
+SUBI SP, SP, #8
+STUR LR, [SP, #0]
+ADD X1, X19, XZR
+ADD X2, XZR, XZR
+SUBI X3, X20, #1
+ADD X4, X20, XZR //(n)
+BL binary_search
+PRNT X0
+LDUR LR, [SP, #0]
+ADDI SP, SP, #8
+
+LDUR X20, [SP, #8]
+LDUR X19, [SP, #0]
+ADDI SP, SP, #16
+
+B end
+
+binary_search:
+SUBS XZR, X2, X3
+B.GT while_end
+ADD X9, X2, X3 //X9 = end + start
+ADDI X9, X9, #1 //X9 = (end + start) + 1
+LSR X9, X9, #1 //X9 = ((end + start) + 1)/2
+LSL X10, X9, #3 
+ADD X10, X1, X10
+LDUR X11, [X10, #0] //X11 = a[m] 
+SUBS XZR, X11, X4
+B.NE not_equal
+ADD X0, X9, XZR
+BR LR
+not_equal:
+SUBS XZR, X4, X11
+B.LE else
+ADDI X2, X9, #1
+B binary_search
+else:
+SUBI X3, X9, #1
+B binary_search
+while_end:
+SUBI X0, XZR, #1
+BR LR
+
+insertion_sort:
+SUBI SP, SP, #24
+STUR X21, [SP, #0]
+STUR X22, [SP, #8]
+STUR X23, [SP, #16]
+ADDI X21, XZR, #1 //X21 = i, i=1
+ADD X5, XZR, XZR //initialize value, X5 = value
+sorting:
+SUBS XZR, X21, X2 //compare i < n
+B.GE done_sorting
+LSL X11, X21, #3
+ADD X11, X1, X11
+LDUR X12, [X11, #0] //X12 = a[i]
+ADD X22, X12, XZR // value = a[i]
+SUBI SP, SP, #8
+STUR LR, [SP, #0]
+ADD X1, X1, XZR //a
+ADD X4, X21, XZR //i
+BL is_shift
+LDUR LR, [SP, #0]
+ADDI SP, SP, #8
+ADD X23, X0, XZR
+//now we call is_insert
+SUBI SP, SP, #8
+STUR LR, [SP, #0]
+ADD X1, X1, XZR //a
+ADD X5, X22, XZR //value
+ADD X6, X23, XZR //return from shift
+BL is_insert
+LDUR LR, [SP, #0]
+ADDI SP, SP, #8
+ADDI X21, X21, #1
+B sorting
+done_sorting:
+LDUR X23, [SP, #16]
+LDUR X22, [SP, #8]
+LDUR X21, [SP, #0]
+ADDI SP, SP, #24
+BR LR
+
+is_shift:
+SUBI X9, X4, #1 //X9 = end - 1, X9 = i
+LSL X10, X4, #3 //X10 = end *8
+ADD X10, X1, X10 //X10 = &a[end]
+LDUR X11, [X10, #0] //X11 = a[end], X11 = temp
+shifting:
+SUBIS XZR, X9, #-1
+B.LE shifting_done
+LSL X12, X9, #3 // X12 = i *8
+ADD X12, X1, X12 //X12 = &a[i]
+LDUR X13, [X12, #0] // X13 = a[i]
+SUBS XZR, X13, X11
+B.LE shifting_done
+LSL X12, X9, #3
+ADD X12, X1, X12
+STUR X13, [X12, #8] // a[i+1] = a[i]
+SUBI X9, X9, #1
+B shifting
+shifting_done:
+ADDI X0, X9, #1 //place return value
+BR LR
+
+is_insert:
+LSL X11, X6, #3
+ADD X12, X5, XZR
+ADD X11, X1, X11 //tmp = &a[where]
+STUR X12, [X11, #0] //a[where] = what
+BR LR
+
+fill:
+ADD X9, XZR, XZR  //i=0
+loop_top:
+SUBS XZR, X9, X2
+B.GE loop_end
+LSL X10, X9, #3
+ADD X11, X1, X10
+SUB X10, X2, X9 //a[i] = n-i
+SUBI X10, X10, #1 //a[i] = n - i - 1
+STUR X10, [X11, #0]
+ADDI X9, X9, #1
+B loop_top
+loop_end:
+BR LR
+
+end:
+HALT
